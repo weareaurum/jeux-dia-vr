@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jeux Dia VR Reservations</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: black;
+      color: white;
+    }
+    header { text-align: center; padding: 20px; }
+    header img { width: 150px; }
+    nav {
+      display: flex;
+      justify-content: center;
+      background: linear-gradient(to right, purple, green);
+      padding: 10px;
+    }
+    nav button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      background: black;
+      color: white;
+      border: 2px solid white;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    nav button:hover { background: white; color: black; }
+    .tab { display: none; padding: 20px; }
+    .active { display: block; }
+    input, select {
+      margin: 5px 0;
+      padding: 8px;
+      width: 100%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button.action {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background: purple;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button.action:hover { background: green; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="your-logo.png" alt="Jeux Dia Logo">
+  </header>
+
+  <nav>
+    <button onclick="showTab('bookingTab')">📅 Book & Schedule</button>
+    <button onclick="showTab('accountTab')">👤 My Account</button>
+    <button onclick="showTab('adminTab')">⚙️ Admin Portal</button>
+    <button onclick="showTab('authTab')">🔑 Sign In</button>
+  </nav>
+
+  <!-- Booking -->
+  <div id="bookingTab" class="tab active">
+    <h2>Book a Session</h2>
+    <label>Date</label>
+    <input type="date" id="bookDate">
+    <label>Time</label>
+    <select id="bookTime">
+      <option value="">--Select Time--</option>
+      <option>09:00</option><option>10:00</option><option>11:00</option>
+      <option>12:00</option><option>13:00</option><option>14:00</option>
+      <option>15:00</option><option>16:00</option><option>17:00</option>
+      <option>18:00</option><option>19:00</option><option>20:00</option>
+    </select>
+    <label>Number of People</label>
+    <input type="number" id="bookPeople" min="1" max="20">
+    <label>Location</label>
+    <select id="bookLocation" onchange="toggleAddress()">
+      <option value="onsite">Onsite</option>
+      <option value="offsite">Outside (Enter Address)</option>
+    </select>
+    <input type="text" id="bookAddress" placeholder="Enter address" style="display:none;">
+    <label>Discount Code</label>
+    <input type="text" id="bookDiscount">
+    <button class="action" onclick="fakeBook()">📌 Book Now</button>
+    <h3>Availability</h3>
+    <div id="availability">Available times will appear here</div>
+  </div>
+
+  <!-- My Account -->
+  <div id="accountTab" class="tab">
+    <h2>My Account</h2>
+    <p>Email: <span id="custEmail">(sign in required)</span></p>
+    <h3>Bookings</h3>
+    <div id="bookingList">(no bookings yet)</div>
+  </div>
+
+  <!-- Admin -->
+  <div id="adminTab" class="tab">
+    <h2>Admin Portal</h2>
+    <button onclick="showAdminSection('pricing')">💰 Pricing</button>
+    <button onclick="showAdminSection('discounts')">🎟 Discounts</button>
+    <button onclick="showAdminSection('customers')">👥 Customers</button>
+    <button onclick="showAdminSection('reports')">📊 Reports</button>
+
+    <div id="adminPricing" class="adminSection">
+      <h3>Pricing</h3>
+      <input type="number" id="priceHourly" placeholder="Hourly Fee (XOF)">
+      <input type="number" id="priceExtra" placeholder="Extra Person Fee (XOF)">
+      <button class="action">Save</button>
+    </div>
+    <div id="adminDiscounts" class="adminSection" style="display:none;">
+      <h3>Discounts</h3>
+      <p>Discount controls here</p>
+    </div>
+    <div id="adminCustomers" class="adminSection" style="display:none;">
+      <h3>Customers</h3>
+      <p>Customer list here</p>
+    </div>
+    <div id="adminReports" class="adminSection" style="display:none;">
+      <h3>Reports</h3>
+      <p>Reports here</p>
+    </div>
+  </div>
+
+  <!-- Auth -->
+  <div id="authTab" class="tab">
+    <h2>Sign In / Sign Up</h2>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button class="action" onclick="signUp()">📝 Sign Up</button>
+    <button class="action" onclick="signIn()">🔓 Sign In</button>
+    <button class="action" onclick="signInGoogle()">🔑 Sign In with Google</button>
+    <button class="action" onclick="signOutUser()">🚪 Sign Out</button>
+  </div>
+
+  <script>
+    // === UI Controls ===
+    function showTab(tabId) {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+    }
+    function toggleAddress() {
+      const loc = document.getElementById("bookLocation").value;
+      document.getElementById("bookAddress").style.display = loc === "offsite" ? "block" : "none";
+    }
+    function showAdminSection(sec) {
+      document.querySelectorAll(".adminSection").forEach(s => s.style.display="none");
+      document.getElementById("admin" + sec.charAt(0).toUpperCase() + sec.slice(1)).style.display="block";
+    }
+    function fakeBook() {
+      alert("Booking button clicked (Firebase not yet connected)!");
+    }
+  </script>
+
+  <!-- Firebase Auth Integration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { 
+      getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
+      signOut, GoogleAuthProvider, signInWithPopup, onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAi8oGnNplwn2-b_IP6jxLTU2o3WsbYy6w",
+  authDomain: "jeux-dia.firebaseapp.com",
+  projectId: "jeux-dia",
+  storageBucket: "jeux-dia.firebasestorage.app",
+  messagingSenderId: "402580184384",
+  appId: "1:402580184384:web:9b0706ca7c5adb54bd2ea5",
+  measurementId: "G-72VSLRWCR7"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // === AUTH FUNCTIONS ===
+    async function signUp() {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+      try {
+        await createUserWithEmailAndPassword(auth, email, pass);
+        alert("✅ Signed up successfully!");
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    }
+
+    async function signIn() {
+      const email = document.getElementById("email").value;
+      const pass = document.getElementById("password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        alert("✅ Signed in!");
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    }
+
+    async function signInGoogle() {
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, provider);
+        alert("✅ Google Sign-In successful!");
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    }
+
+    async function signOutUser() {
+      await signOut(auth);
+      alert("🚪 Signed out!");
+    }
+
+    // === Track auth state ===
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("custEmail").innerText = user.email;
+      } else {
+        document.getElementById("custEmail").innerText = "(sign in required)";
+      }
+    });
+
+    // Attach to window so HTML buttons can use them
+    window.signUp = signUp;
+    window.signIn = signIn;
+    window.signInGoogle = signInGoogle;
+    window.signOutUser = signOutUser;
+  </script>
+</body>
+</html>
