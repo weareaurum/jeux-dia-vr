@@ -1,168 +1,264 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Jeux Dia VR Reservations</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Jeux Dia — VR Reservations</title>
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: black;
-      color: white;
+    :root{
+      --purple:#6f00ff;
+      --green:#00cc66;
+      --bg:#070014;
+      --card: rgba(255,255,255,0.04);
+      --muted:#cfdfff;
+      --accent: linear-gradient(90deg,var(--purple),var(--green));
     }
-    header { text-align: center; padding: 20px; }
-    header img { width: 150px; }
-    nav {
-      display: flex;
-      justify-content: center;
-      background: linear-gradient(to right, purple, green);
-      padding: 10px;
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,Segoe UI,Roboto,Arial;
+      background:linear-gradient(180deg,#050013,#090021);
+      color:var(--muted);
+      -webkit-font-smoothing:antialiased;
+      padding:18px;
     }
-    nav button {
-      margin: 0 10px;
-      padding: 10px 20px;
-      background: black;
-      color: white;
-      border: 2px solid white;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-    nav button:hover { background: white; color: black; }
-    .tab { display: none; padding: 20px; }
-    .active { display: block; }
-    input, select {
-      margin: 5px 0;
-      padding: 8px;
-      width: 100%;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    button.action {
-      margin-top: 10px;
-      padding: 10px 15px;
-      background: purple;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button.action:hover { background: green; }
+    .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 380px;gap:16px}
+    @media(max-width:980px){.wrap{grid-template-columns:1fr}}
+    header{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:8px}
+    .logo{height:76px;filter:drop-shadow(0 0 12px rgba(111,0,255,0.35)) drop-shadow(0 0 10px rgba(0,204,102,0.15))}
+    nav{display:flex;gap:8px;justify-content:center;margin-bottom:10px}
+    .nav-btn{background:var(--purple);color:white;padding:10px 14px;border-radius:10px;border:2px solid var(--green);cursor:pointer;font-weight:700}
+    .nav-ghost{background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--muted);padding:8px 10px;border-radius:8px;cursor:pointer}
+    .card{background:var(--card);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.03)}
+    label{display:block;margin-top:8px;font-weight:600;color:#dfe9ff}
+    input, select, textarea{width:100%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:#0b0b10;color:var(--muted)}
+    button{cursor:pointer}
+    .btn-primary{background:var(--purple);color:white;padding:8px 12px;border-radius:8px;border:2px solid var(--green)}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--muted);padding:8px 10px;border-radius:8px}
+    .small{font-size:0.9rem;color:#9fb1e6}
+    .muted{color:#99aeea}
+    .tab-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    .tab-btn{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+    .tab-btn.active{background:var(--green);color:black;font-weight:800}
+    ul{list-style:none;padding:0;margin:0}
+    li{margin-bottom:8px}
+    .pill{padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.3);display:inline-block}
+    .flex{display:flex;gap:10px;align-items:center}
+    .center{text-align:center}
+    .hidden{display:none!important}
+    .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#0b0b10;padding:18px;border-radius:12px;border:2px solid rgba(255,255,255,.06);z-index:1200;max-width:720px;width:94%;}
+    .overlay{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1100}
   </style>
 </head>
 <body>
-  <header>
-    <img src="your-logo.png" alt="Jeux Dia Logo">
-  </header>
+  <div style="max-width:1200px;margin:0 auto;">
+    <header>
+      <!-- Replace with your real logo filename or keep as text -->
+      <img src="logo.png" alt="Jeux Dia" class="logo" onerror="this.style.display='none'">
+      <div style="text-align:left">
+        <div style="font-size:1.6rem;font-weight:800;color:white">Jeux Dia</div>
+        <div class="small">Virtual Reality Game Room — Book, Manage, Analyze</div>
+      </div>
+    </header>
 
-  <nav>
-    <button onclick="showTab('bookingTab')">📅 Book & Schedule</button>
-    <button onclick="showTab('accountTab')">👤 My Account</button>
-    <button onclick="showTab('adminTab')">⚙️ Admin Portal</button>
-    <button onclick="showTab('authTab')">🔑 Sign In</button>
-  </nav>
-
-  <!-- Booking -->
-  <div id="bookingTab" class="tab active">
-    <h2>Book a Session</h2>
-    <label>Date</label>
-    <input type="date" id="bookDate">
-    <label>Time</label>
-    <select id="bookTime">
-      <option value="">--Select Time--</option>
-      <option>09:00</option><option>10:00</option><option>11:00</option>
-      <option>12:00</option><option>13:00</option><option>14:00</option>
-      <option>15:00</option><option>16:00</option><option>17:00</option>
-      <option>18:00</option><option>19:00</option><option>20:00</option>
-    </select>
-    <label>Number of People</label>
-    <input type="number" id="bookPeople" min="1" max="20">
-    <label>Location</label>
-    <select id="bookLocation" onchange="toggleAddress()">
-      <option value="onsite">Onsite</option>
-      <option value="offsite">Outside (Enter Address)</option>
-    </select>
-    <input type="text" id="bookAddress" placeholder="Enter address" style="display:none;">
-    <label>Discount Code</label>
-    <input type="text" id="bookDiscount">
-    <button class="action" onclick="fakeBook()">📌 Book Now</button>
-    <h3>Availability</h3>
-    <div id="availability">Available times will appear here</div>
+    <nav style="justify-content:flex-start;margin-bottom:18px">
+      <button class="nav-btn" id="navBook">Book & Schedule</button>
+      <button class="nav-btn" id="navAccount">My Account</button>
+      <button class="nav-btn" id="navAdmin">Admin</button>
+      <div style="flex:1"></div>
+      <div id="userStatus" style="display:flex;align-items:center;gap:10px">
+        <div class="small" id="userEmail">Not signed in</div>
+        <button class="nav-ghost" id="authToggle">Sign in</button>
+      </div>
+    </nav>
   </div>
 
-  <!-- My Account -->
-  <div id="accountTab" class="tab">
-    <h2>My Account</h2>
-    <p>Email: <span id="custEmail">(sign in required)</span></p>
-    <h3>Bookings</h3>
-    <div id="bookingList">(no bookings yet)</div>
+  <div class="wrap">
+    <!-- LEFT: Booking & content -->
+    <main>
+      <!-- Book card -->
+      <section class="card" id="bookingCard">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2>Book Your VR Session</h2>
+          <div class="small">All currency shown in <strong>XOF</strong> • Times are 24h</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:12px;margin-top:10px">
+          <div>
+            <label>Resource</label>
+            <select id="resourceSelect"></select>
+
+            <label>Date (next 14 days)</label>
+            <select id="dateSelect"></select>
+
+            <label>Available Time Slots (click to prefill)</label>
+            <div id="timeSlots" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+
+            <div id="scheduleGroups" style="margin-top:12px"></div>
+          </div>
+
+          <div>
+            <div class="card">
+              <h3>Confirm Booking</h3>
+              <label>Full name</label><input id="b_name" placeholder="Your full name">
+
+              <label>Email</label><input id="b_email" placeholder="you@example.com">
+
+              <label>Choose date</label><select id="b_date"></select>
+              <label>Choose time (24h)</label><select id="b_time"></select>
+
+              <label>Players (max 10)</label><input id="b_players" type="number" min="1" max="10" value="2">
+
+              <label>Location</label>
+              <select id="b_type"><option value="onsite">At Jeux Dia</option><option value="outside">Outside event</option></select>
+
+              <div id="outsideBlock" style="display:none">
+                <label>Address / Geolocation</label>
+                <input id="b_address" placeholder="Address or lat,lng">
+                <button class="btn-ghost" id="useLocation">Use my geolocation</button>
+              </div>
+
+              <label>Discount code (optional)</label>
+              <div style="display:flex;gap:8px">
+                <input id="b_discount" placeholder="e.g. VRFUN20">
+                <button class="btn-ghost" id="applyDiscBtn">Apply</button>
+              </div>
+              <div id="discountMessage" class="small" style="margin-top:6px"></div>
+
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+                <div class="pill">Total: <span id="priceDisplay">0 XOF</span></div>
+                <div class="small muted">Currency: XOF</div>
+              </div>
+
+              <div style="display:flex;gap:8px;margin-top:10px">
+                <button class="btn-primary" id="checkAvail">Check Availability</button>
+                <button class="btn-primary" id="confirmBooking">Confirm (Sign-in required)</button>
+              </div>
+
+              <div id="bookingMsg" class="small muted" style="margin-top:8px"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Customer account / bookings -->
+      <section class="card" id="accountCard" style="margin-top:12px;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2>My Account</h2>
+          <div class="small">View & manage your bookings</div>
+        </div>
+        <div id="accountInner" style="margin-top:10px">
+          <div class="small">Sign in to view your bookings.</div>
+          <div style="margin-top:8px"><button class="nav-btn" id="signInPrompt">Sign in / Sign up</button></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- RIGHT: Admin & quick account panels -->
+    <aside>
+      <!-- quick account -->
+      <div class="card" id="quickAccount">
+        <h3>Account</h3>
+        <div id="accountPanelContent">
+          <div class="small">Not signed in</div>
+          <div style="margin-top:8px">
+            <button class="nav-ghost" id="signinBtn">Sign in</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin panel -->
+      <div class="card hidden" id="adminPanel" style="margin-top:12px">
+        <h3>Admin Portal</h3>
+        <div class="tab-row" id="adminTabs">
+          <button class="tab-btn active" data-tab="admin_bookings">Bookings</button>
+          <button class="tab-btn" data-tab="admin_discounts">Discounts</button>
+          <button class="tab-btn" data-tab="admin_customers">Customers</button>
+          <button class="tab-btn" data-tab="admin_reports">Reports</button>
+        </div>
+
+        <!-- Bookings management -->
+        <div id="admin_bookings" class="admin-section">
+          <div id="bookingFilters" style="margin-bottom:12px">
+            <label>Email (exact):</label><input id="filterEmail" placeholder="customer@example.com">
+            <label>Start date</label><input id="filterStart" type="date">
+            <label>End date</label><input id="filterEnd" type="date">
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn-primary" id="applyFilters">Apply</button>
+              <button class="btn-ghost" id="clearFilters">Clear</button>
+            </div>
+          </div>
+          <div style="margin-top:8px">
+            <button class="btn-primary" id="refreshBookings">Refresh</button>
+          </div>
+          <div id="allBookings" style="margin-top:10px;max-height:380px;overflow:auto"></div>
+        </div>
+
+        <!-- Discounts -->
+        <div id="admin_discounts" class="admin-section hidden">
+          <h4>Create Discount</h4>
+          <form id="discountForm">
+            <label>Code</label><input id="disc_code" required>
+            <label>Type</label><select id="disc_type"><option value="percent">Percent</option><option value="flat">Flat (XOF)</option></select>
+            <label>Value</label><input id="disc_value" type="number" required>
+            <label>Start date</label><input id="disc_start" type="date" required>
+            <label>End date</label><input id="disc_end" type="date" required>
+            <div style="margin-top:8px"><button class="btn-primary" type="submit">Add Discount</button></div>
+          </form>
+          <h4 style="margin-top:12px">Discounts</h4>
+          <div id="discountList" style="max-height:300px;overflow:auto"></div>
+        </div>
+
+        <!-- Customers -->
+        <div id="admin_customers" class="admin-section hidden">
+          <h4>Customers</h4>
+          <div id="customersList" style="max-height:420px;overflow:auto"></div>
+          <div style="margin-top:8px"><button class="btn-primary" id="exportExcel">Export Reports (Excel)</button></div>
+        </div>
+
+        <!-- Reports -->
+        <div id="admin_reports" class="admin-section hidden">
+          <h4>Analytics Dashboard</h4>
+          <div id="analyticsCounters" style="display:flex;gap:18px;justify-content:space-between;margin-bottom:12px">
+            <div class="center"><h2 id="totalBookings">0</h2><div class="small">Total Bookings</div></div>
+            <div class="center"><h2 id="totalRevenue">0 XOF</h2><div class="small">Total Revenue</div></div>
+            <div class="center"><h2 id="activeCustomers">0</h2><div class="small">Active Customers</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <canvas id="chartBookingsByDate" height="140"></canvas>
+            <canvas id="chartBookingsByTime" height="140"></canvas>
+            <canvas id="chartLocationSplit" height="140"></canvas>
+            <canvas id="chartRevenueTrend" height="140"></canvas>
+          </div>
+          <div id="reportCounts" class="small muted" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <!-- Admin -->
-  <div id="adminTab" class="tab">
-    <h2>Admin Portal</h2>
-    <button onclick="showAdminSection('pricing')">💰 Pricing</button>
-    <button onclick="showAdminSection('discounts')">🎟 Discounts</button>
-    <button onclick="showAdminSection('customers')">👥 Customers</button>
-    <button onclick="showAdminSection('reports')">📊 Reports</button>
-
-    <div id="adminPricing" class="adminSection">
-      <h3>Pricing</h3>
-      <input type="number" id="priceHourly" placeholder="Hourly Fee (XOF)">
-      <input type="number" id="priceExtra" placeholder="Extra Person Fee (XOF)">
-      <button class="action">Save</button>
-    </div>
-    <div id="adminDiscounts" class="adminSection" style="display:none;">
-      <h3>Discounts</h3>
-      <p>Discount controls here</p>
-    </div>
-    <div id="adminCustomers" class="adminSection" style="display:none;">
-      <h3>Customers</h3>
-      <p>Customer list here</p>
-    </div>
-    <div id="adminReports" class="adminSection" style="display:none;">
-      <h3>Reports</h3>
-      <p>Reports here</p>
-    </div>
+  <!-- Edit Booking Modal for Admin -->
+  <div id="overlay" class="overlay hidden"></div>
+  <div id="editBookingModal" class="modal hidden" role="dialog" aria-modal="true">
+    <h3>Edit Booking</h3>
+    <form id="editBookingForm">
+      <input type="hidden" id="editBookingId">
+      <label>Date</label><input id="editDate" type="date" required>
+      <label>Time</label><select id="editTime"></select>
+      <label>People</label><input id="editNumPeople" type="number" min="1" max="10" required>
+      <label>Location</label><select id="editLocation"><option value="onsite">At Jeux Dia</option><option value="outside">Outside</option></select>
+      <label>Address</label><input id="editAddress">
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn-primary" type="submit">Save</button><button class="btn-ghost" type="button" id="closeEdit">Cancel</button></div>
+    </form>
   </div>
 
-  <!-- Auth -->
-  <div id="authTab" class="tab">
-    <h2>Sign In / Sign Up</h2>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <button class="action" onclick="signUp()">📝 Sign Up</button>
-    <button class="action" onclick="signIn()">🔓 Sign In</button>
-    <button class="action" onclick="signInGoogle()">🔑 Sign In with Google</button>
-    <button class="action" onclick="signOutUser()">🚪 Sign Out</button>
-  </div>
-
-  <script>
-    // === UI Controls ===
-    function showTab(tabId) {
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      document.getElementById(tabId).classList.add("active");
-    }
-    function toggleAddress() {
-      const loc = document.getElementById("bookLocation").value;
-      document.getElementById("bookAddress").style.display = loc === "offsite" ? "block" : "none";
-    }
-    function showAdminSection(sec) {
-      document.querySelectorAll(".adminSection").forEach(s => s.style.display="none");
-      document.getElementById("admin" + sec.charAt(0).toUpperCase() + sec.slice(1)).style.display="block";
-    }
-    function fakeBook() {
-      alert("Booking button clicked (Firebase not yet connected)!");
-    }
-  </script>
-
-  <!-- Firebase Auth Integration -->
+  <!-- Firebase + App Logic -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-    import { 
-      getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
-      signOut, GoogleAuthProvider, signInWithPopup, onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-
+    // ----------------------
     // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAi8oGnNplwn2-b_IP6jxLTU2o3WsbYy6w",
@@ -174,61 +270,825 @@ const firebaseConfig = {
   measurementId: "G-72VSLRWCR7"
 };
 
+    // Import modular SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import {
+      getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+    import {
+      getFirestore, collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, updateDoc, deleteDoc,
+      onSnapshot, serverTimestamp, orderBy, increment, arrayUnion
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    // Init Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    // === AUTH FUNCTIONS ===
-    async function signUp() {
-      const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
-      try {
-        await createUserWithEmailAndPassword(auth, email, pass);
-        alert("✅ Signed up successfully!");
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
+    // Collection refs
+    const bookingsRef = collection(db, "bookings");
+    const discountsRef = collection(db, "discounts");
+    const settingsRef = doc(db, "settings", "pricing");
+    const usersRef = collection(db, "users");
+    const adminsRef = collection(db, "admins");
+    const logsRef = collection(db, "logs");
+
+    // UI refs
+    const navBook = document.getElementById('navBook');
+    const navAccount = document.getElementById('navAccount');
+    const navAdmin = document.getElementById('navAdmin');
+    const authToggle = document.getElementById('authToggle');
+    const userEmailEl = document.getElementById('userEmail');
+
+    const resourceSelect = document.getElementById('resourceSelect');
+    const dateSelect = document.getElementById('dateSelect');
+    const timeSlots = document.getElementById('timeSlots');
+    const b_date = document.getElementById('b_date');
+    const b_time = document.getElementById('b_time');
+    const b_name = document.getElementById('b_name');
+    const b_email = document.getElementById('b_email');
+    const b_players = document.getElementById('b_players');
+    const b_type = document.getElementById('b_type');
+    const b_address = document.getElementById('b_address');
+    const b_discount = document.getElementById('b_discount');
+    const applyDiscBtn = document.getElementById('applyDiscBtn');
+    const discountMessage = document.getElementById('discountMessage');
+    const priceDisplay = document.getElementById('priceDisplay');
+    const checkAvailBtn = document.getElementById('checkAvail');
+    const confirmBookingBtn = document.getElementById('confirmBooking');
+    const bookingMsg = document.getElementById('bookingMsg');
+    const useLocationBtn = document.getElementById('useLocation');
+
+    const accountCard = document.getElementById('accountCard');
+    const accountInner = document.getElementById('accountInner');
+    const quickAccount = document.getElementById('quickAccount');
+    const adminPanel = document.getElementById('adminPanel');
+
+    // Admin UI refs
+    const adminTabBtns = document.querySelectorAll('#adminTabs .tab-btn');
+    const adminSections = document.querySelectorAll('.admin-section');
+    const allBookingsEl = document.getElementById('allBookings');
+    const filterEmail = document.getElementById('filterEmail');
+    const filterStart = document.getElementById('filterStart');
+    const filterEnd = document.getElementById('filterEnd');
+    const applyFilters = document.getElementById('applyFilters');
+    const clearFilters = document.getElementById('clearFilters');
+    const refreshBookingsBtn = document.getElementById('refreshBookings');
+
+    const discountForm = document.getElementById('discountForm');
+    const discountList = document.getElementById('discountList');
+
+    const customersList = document.getElementById('customersList');
+    const exportExcelBtn = document.getElementById('exportExcel');
+
+    // Reports refs
+    const totalBookingsEl = document.getElementById('totalBookings');
+    const totalRevenueEl = document.getElementById('totalRevenue');
+    const activeCustomersEl = document.getElementById('activeCustomers');
+    const chartBookingsByDate = document.getElementById('chartBookingsByDate').getContext('2d');
+    const chartBookingsByTime = document.getElementById('chartBookingsByTime').getContext('2d');
+    const chartLocationSplit = document.getElementById('chartLocationSplit').getContext('2d');
+    const chartRevenueTrend = document.getElementById('chartRevenueTrend').getContext('2d');
+
+    const editModal = document.getElementById('editBookingModal');
+    const overlay = document.getElementById('overlay');
+    const closeEdit = document.getElementById('closeEdit');
+
+    // state
+    let resources = [];
+    let pricing = { hourlyRate: 5000, includedPeople: 3, extraFee: 2000, outsideFee: 10000 };
+    let currentUser = null;
+    let isAdmin = false;
+    let appliedDiscount = null;
+    let bookingsListenerUnsub = null;
+    let bookingsRealtimeListener = null;
+
+    // Charts
+    let bookingsDateChart=null, bookingsTimeChart=null, locationChart=null, revenueChart=null;
+
+    // ---------------------------
+    // UI NAV
+    // ---------------------------
+    navBook.addEventListener('click', ()=> { showMain('booking'); });
+    navAccount.addEventListener('click', ()=> { showMain('account'); loadMyBookings(); });
+    navAdmin.addEventListener('click', async ()=> { await showAdmin(); });
+    authToggle.addEventListener('click', ()=> { if (!currentUser) promptSignIn(); else signOutUser(); });
+    document.getElementById('signInPrompt').addEventListener('click', promptSignIn);
+    document.getElementById('signinBtn').addEventListener('click', promptSignIn);
+
+    function showMain(which){
+      document.getElementById('bookingCard').style.display = which === 'booking' ? 'block':'block';
+      accountCard.style.display = which === 'account' ? 'block':'none';
+      // adminPanel visible only if admin
+      if (which === 'account') window.scrollTo({top:600,behavior:'smooth'});
     }
 
-    async function signIn() {
-      const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-        alert("✅ Signed in!");
-      } catch (err) {
-        alert("Error: " + err.message);
+    // ---------------------------
+    // AUTH
+    // ---------------------------
+    function promptSignIn(){
+      // simple modalless prompt for quick testing
+      const mode = prompt("Type 'in' to sign in, 'up' to sign up, 'google' for Google sign-in:");
+      if (!mode) return;
+      if (mode.toLowerCase() === 'google') return googleSignIn();
+      if (mode.toLowerCase() === 'up') {
+        const email = prompt("Email:");
+        const pass = prompt("Password (>=6):");
+        if (!email||!pass) return alert('Cancelled');
+        createUserWithEmailAndPassword(auth, email, pass).then(()=>alert('Account created')).catch(e=>alert(e.message));
+        return;
       }
+      if (mode.toLowerCase() === 'in') {
+        const email = prompt("Email:");
+        const pass = prompt("Password:");
+        if (!email||!pass) return alert('Cancelled');
+        signInWithEmailAndPassword(auth,email,pass).catch(e=>alert(e.message));
+        return;
+      }
+      alert('Unknown option');
     }
 
-    async function signInGoogle() {
-      const provider = new GoogleAuthProvider();
+    async function googleSignIn(){
       try {
-        const result = await signInWithPopup(auth, provider);
-        alert("✅ Google Sign-In successful!");
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+      } catch(e){ alert('Google sign-in error: ' + e.message); }
     }
 
-    async function signOutUser() {
+    async function signOutUser(){
       await signOut(auth);
-      alert("🚪 Signed out!");
+      alert('Signed out');
     }
 
-    // === Track auth state ===
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
       if (user) {
-        document.getElementById("custEmail").innerText = user.email;
+        userEmailEl.textContent = user.email;
+        authToggle.textContent = 'Sign out';
+        // create users doc if not exists
+        const udoc = doc(db,'users',user.uid);
+        const s = await getDoc(udoc);
+        if (!s.exists()) await setDoc(udoc, { email:user.email, name:user.displayName||'', createdAt:new Date().toISOString(), blocked:false });
+        // check admin
+        const adm = await getDoc(doc(db,'admins', user.uid));
+        isAdmin = adm.exists();
+        adminPanel.classList.toggle('hidden', !isAdmin);
+        // show account UI
+        loadMyBookings();
       } else {
-        document.getElementById("custEmail").innerText = "(sign in required)";
+        userEmailEl.textContent = 'Not signed in';
+        authToggle.textContent = 'Sign in';
+        adminPanel.classList.add('hidden');
+        accountInner.innerHTML = `<div class="small">Sign in to view bookings and manage your profile.</div><div style="margin-top:8px"><button class="nav-btn" id="signinQuick">Sign in / Sign up</button></div>`;
+        const btn = document.getElementById('signinQuick'); if (btn) btn.addEventListener('click', promptSignIn);
       }
     });
 
-    // Attach to window so HTML buttons can use them
-    window.signUp = signUp;
-    window.signIn = signIn;
-    window.signInGoogle = signInGoogle;
-    window.signOutUser = signOutUser;
+    // ---------------------------
+    // Seed / load resources & pricing
+    // ---------------------------
+    async function loadResourcesAndPricing(){
+      // resources collection - seed if empty
+      const resSnap = await getDocs(collection(db,'resources'));
+      if (resSnap.empty){
+        await addDoc(collection(db,'resources'), { name:'VR Room', capacity:6 });
+        await addDoc(collection(db,'resources'), { name:'VR Arena', capacity:12 });
+        await addDoc(collection(db,'resources'), { name:'VR Racing Sim', capacity:4 });
+      }
+      const resSnap2 = await getDocs(collection(db,'resources'));
+      resources = resSnap2.docs.map(d=>({ id:d.id, ...d.data() }));
+      resourceSelect.innerHTML = '';
+      for (const r of resources){
+        const opt = document.createElement('option'); opt.value = r.id; opt.textContent = `${r.name} (cap ${r.capacity})`; resourceSelect.appendChild(opt);
+      }
+
+      // pricing
+      const s = await getDoc(settingsRef);
+      if (s.exists()) pricing = s.data();
+      adminPanel && (document.getElementById('adminPanel').classList.toggle('hidden', true));
+      // populate dates & times
+      populateDates();
+      populateBookingDates();
+    }
+
+    // ---------------------------
+    // Dates & Times (realtime availability)
+    // ---------------------------
+    function generateSlots(){
+      const slots = [];
+      for (let h=9; h<=22; h++) slots.push(String(h).padStart(2,'0') + ':00');
+      return slots;
+    }
+
+    function populateDates(){
+      dateSelect.innerHTML = '';
+      const today = new Date();
+      for (let i=0;i<14;i++){
+        const d = new Date(today); d.setDate(today.getDate()+i);
+        const iso = d.toISOString().slice(0,10);
+        const opt = document.createElement('option'); opt.value = iso; opt.textContent = (i===0? iso + ' (Today)': iso);
+        dateSelect.appendChild(opt);
+      }
+      // watch changes
+      dateSelect.addEventListener('change', ()=> populateTimeSlotsRealtime(dateSelect.value, resourceSelect.value));
+      resourceSelect.addEventListener('change', ()=> populateTimeSlotsRealtime(dateSelect.value, resourceSelect.value));
+      // initial load
+      populateTimeSlotsRealtime(dateSelect.value, resourceSelect.value);
+    }
+
+    // For booking form date select (right panel)
+    function populateBookingDates(){
+      b_date.innerHTML = '';
+      const today = new Date();
+      for (let i=0;i<14;i++){
+        const d = new Date(today); d.setDate(today.getDate()+i);
+        const iso = d.toISOString().slice(0,10);
+        const opt = document.createElement('option'); opt.value = iso; opt.textContent = iso;
+        b_date.appendChild(opt);
+      }
+      b_date.addEventListener('change', ()=> populateBookingTimesRealtime(b_date.value, resourceSelect.value));
+      b_date.value = dateSelect.value;
+      populateBookingTimesRealtime(b_date.value, resourceSelect.value);
+    }
+
+    let timesUnsub = null;
+    function populateTimeSlotsRealtime(date, resourceId){
+      timeSlots.innerHTML = 'Loading...';
+      if (timesUnsub) timesUnsub();
+      const q = query(collection(db,'bookings'), where('date','==', date), where('resourceId','==', resourceId));
+      timesUnsub = onSnapshot(q, snap=>{
+        const booked = snap.docs.map(d=>d.data().time);
+        timeSlots.innerHTML = '';
+        const slots = generateSlots();
+        let any=false;
+        for (const s of slots){
+          const btn = document.createElement('button');
+          btn.className = 'tab-btn';
+          btn.textContent = booked.includes(s) ? s + ' (Booked)' : s;
+          if (!booked.includes(s)) {
+            btn.addEventListener('click', ()=> { b_date.value = date; b_time.value = s; updatePriceDisplay(); });
+            any=true;
+          } else { btn.disabled=true; btn.style.opacity=0.5; }
+          timeSlots.appendChild(btn);
+        }
+        if (!any) timeSlots.innerHTML = '<div class="small muted">No available slots for this date & resource.</div>';
+      }, err=>{ console.error(err); timeSlots.innerHTML='Error'; });
+    }
+
+    let bookingTimesUnsub = null;
+    function populateBookingTimesRealtime(date, resourceId){
+      b_time.innerHTML = 'Loading...';
+      if (bookingTimesUnsub) bookingTimesUnsub();
+      const q = query(collection(db,'bookings'), where('date','==', date), where('resourceId','==', resourceId));
+      bookingTimesUnsub = onSnapshot(q, snap=>{
+        const booked = snap.docs.map(d=>d.data().time);
+        b_time.innerHTML = '';
+        const slots = generateSlots();
+        for (const s of slots){
+          const opt = document.createElement('option'); opt.value = s; opt.textContent = booked.includes(s)? s + ' (Booked)': s;
+          if (booked.includes(s)) opt.disabled=true;
+          b_time.appendChild(opt);
+        }
+        if (!b_time.children.length) { const opt=document.createElement('option');opt.disabled=true;opt.textContent='No slots'; b_time.appendChild(opt); }
+        updatePriceDisplay();
+      }, err=>{ console.error(err); b_time.innerHTML='Error'; });
+    }
+
+    // ---------------------------
+    // Price calc and discount apply
+    // ---------------------------
+    function calcBaseTotal(players, type){
+      const base = (pricing.hourlyRate || 5000);
+      const included = (pricing.includedPeople || 3);
+      const extra = (pricing.extraFee || 2000);
+      const outside = (pricing.outsideFee || 10000);
+      let total = base;
+      if (players > included) total += (players - included) * extra;
+      if (type === 'outside') total += outside;
+      return total;
+    }
+
+    async function updatePriceDisplay(){
+      const players = Number(b_players.value || 1);
+      const type = b_type.value;
+      let total = calcBaseTotal(players, type);
+      // if discount applied and valid -> apply
+      if (appliedDiscount){
+        const today = new Date().toISOString().slice(0,10);
+        if (!appliedDiscount.active || appliedDiscount.end < today || appliedDiscount.start > today) {
+          appliedDiscount = null;
+          discountMessage.textContent = 'Discount expired or inactive';
+        } else {
+          if (appliedDiscount.type === 'percent') total = Math.round(total * (1 - appliedDiscount.value / 100));
+          else total = Math.max(0, total - appliedDiscount.value);
+        }
+      }
+      priceDisplay.textContent = total.toLocaleString() + ' XOF';
+      return total;
+    }
+
+    applyDiscBtn.addEventListener('click', async ()=>{
+      const code = (b_discount.value || '').trim().toUpperCase();
+      if (!code) { discountMessage.textContent = 'Enter code'; return; }
+      const q = query(discountsRef, where('code','==', code));
+      const snap = await getDocs(q);
+      if (snap.empty) { discountMessage.textContent = 'Invalid code'; appliedDiscount = null; updatePriceDisplay(); return; }
+      const d = snap.docs[0].data();
+      const docId = snap.docs[0].id;
+      const today = new Date().toISOString().slice(0,10);
+      if (!d.active || d.end < today || d.start > today) { discountMessage.textContent = 'Code expired/inactive'; appliedDiscount = null; updatePriceDisplay(); return; }
+      appliedDiscount = { ...d, id: docId };
+      discountMessage.textContent = `Applied ${d.code} — ${d.type==='percent'? d.value+'%':'-'+d.value+' XOF'}`;
+      updatePriceDisplay();
+    });
+
+    // Update price live when inputs change
+    b_players.addEventListener('input', updatePriceDisplay);
+    b_type.addEventListener('change', ()=> { document.getElementById('outsideBlock').style.display = b_type.value==='outside' ? 'block':'none'; updatePriceDisplay(); });
+
+    // Use geolocation
+    useLocationBtn.addEventListener('click', ()=>{
+      if (!navigator.geolocation) return alert('Geolocation not available');
+      useLocationBtn.textContent = 'Detecting…';
+      navigator.geolocation.getCurrentPosition(pos=>{
+        b_address.value = `${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`;
+        useLocationBtn.textContent = 'Use my geolocation';
+      }, err=>{
+        useLocationBtn.textContent = 'Use my geolocation';
+        alert('Geo error: ' + err.message);
+      });
+    });
+
+    // ---------------------------
+    // Booking create & check
+    // ---------------------------
+    async function checkAvailability(date,time,resourceId,party){
+      const q = query(collection(db,'bookings'), where('date','==',date), where('resourceId','==',resourceId));
+      const snap = await getDocs(q);
+      let used = 0;
+      const resource = resources.find(r=>r.id===resourceId);
+      const cap = resource ? resource.capacity : 0;
+      for (const d of snap.docs){
+        const r = d.data();
+        if (r.status === 'cancelled') continue;
+        // assume 1hr sessions, check overlap by exact time
+        if (r.time === time) used += (r.party||r.people||1);
+      }
+      return { ok: (cap - used) >= party, remaining: cap - used, used, capacity:cap };
+    }
+
+    checkAvailBtn.addEventListener('click', async ()=>{
+      const date = b_date.value, time = b_time.value, resourceId = resourceSelect.value, party = Number(b_players.value||1);
+      if (!date || !time) return bookingMsg.textContent = 'Pick date & time';
+      const res = await checkAvailability(date,time,resourceId,party);
+      if (res.ok) bookingMsg.innerHTML = `<span class="small success">Available • remaining capacity: ${res.remaining}</span>`;
+      else bookingMsg.innerHTML = `<span class="small error">Not available • used ${res.used}/${res.capacity}</span>`;
+    });
+
+    confirmBookingBtn.addEventListener('click', async ()=>{
+      if (!auth.currentUser) return promptSignIn();
+      await createBooking();
+    });
+
+    async function createBooking(){
+      const user = auth.currentUser;
+      const payload = {
+        userId: user.uid,
+        email: user.email,
+        name: b_name.value || user.displayName || '',
+        resourceId: resourceSelect.value,
+        resourceName: (resources.find(r=>r.id===resourceSelect.value)||{}).name || '',
+        date: b_date.value,
+        time: b_time.value,
+        party: Number(b_players.value||1),
+        durationHrs: 1,
+        location: b_type.value,
+        address: b_address.value || '',
+        discountCode: appliedDiscount ? appliedDiscount.code : null,
+        status: 'active',
+        createdAt: serverTimestamp()
+      };
+      payload.total = await updatePriceDisplay();
+
+      // final availability check
+      const ok = await checkAvailability(payload.date, payload.time, payload.resourceId, payload.party);
+      if (!ok.ok) return alert('Slot no longer available');
+
+      try {
+        const bookingRef = await addDoc(bookingsRef, payload);
+        // log
+        await addDoc(logsRef, { action:'create', bookingId: bookingRef.id, userId:user.uid, timestamp: serverTimestamp() });
+
+        // if discount used -> update discount doc
+        if (appliedDiscount) {
+          const q = query(discountsRef, where('code','==', appliedDiscount.code));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const discDoc = snap.docs[0];
+            await updateDoc(doc(db,'discounts', discDoc.id), {
+              usageCount: increment(1),
+              usedBy: arrayUnion(user.email || user.uid)
+            });
+          }
+        }
+
+        alert('Booking saved • Total: ' + payload.total + ' XOF');
+        // refresh UI
+        populateTimeSlotsRealtime(dateSelect.value, resourceSelect.value);
+        populateBookingTimesRealtime(b_date.value, resourceSelect.value);
+        loadMyBookings();
+      } catch (err) {
+        console.error(err); alert('Booking failed: ' + err.message);
+      }
+    }
+
+    // ---------------------------
+    // My Bookings (customer)
+    // ---------------------------
+    async function loadMyBookings(){
+      if (!currentUser) return;
+      const u = currentUser;
+      // show user email
+      document.getElementById('accountPanelContent').innerHTML = `<div class="small">Signed in as <strong>${u.email}</strong></div><div style="margin-top:8px"><button class="btn-ghost" id="accountSignOut">Sign out</button></div>`;
+      document.getElementById('accountSignOut').addEventListener('click', signOutUser);
+
+      const q = query(collection(db,'bookings'), where('userId','==', u.uid), orderBy('date'));
+      const snap = await getDocs(q);
+      const container = document.createElement('div');
+      container.innerHTML = `<div class="small">Your bookings</div>`;
+      const ul = document.createElement('ul'); ul.id = 'myBookingsList'; ul.style.marginTop='8px';
+      if (snap.empty) ul.innerHTML = '<div class="small muted">No bookings yet</div>';
+      for (const d of snap.docs){
+        const r = d.data(); const id = d.id;
+        const li = document.createElement('li');
+        li.className='card';
+        li.style.marginBottom='8px';
+        li.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${r.resourceName||''}</strong><div class="small muted">${r.date} • ${r.time}</div></div><div style="text-align:right"><div><b>${(r.total||0).toLocaleString()} XOF</b></div><div class="small">${r.party||r.people} ppl</div></div></div><div style="margin-top:8px"><button class="btn-ghost cancelBookBtn" data-id="${id}">❌ Cancel</button> <button class="btn-ghost editBookBtn" data-id="${id}">✏️ Edit</button></div>`;
+        ul.appendChild(li);
+      }
+      container.appendChild(ul);
+      accountInner.innerHTML = ''; accountInner.appendChild(container);
+
+      // cancel handler
+      container.addEventListener('click', async (ev)=>{
+        const btn = ev.target.closest('.cancelBookBtn');
+        if (btn){
+          const id = btn.dataset.id;
+          if (!confirm('Cancel booking?')) return;
+          await deleteDoc(doc(db,'bookings',id));
+          await addDoc(logsRef, { action:'cancel', bookingId:id, userId: currentUser.uid, timestamp: serverTimestamp() });
+          alert('Cancelled');
+          loadMyBookings();
+        }
+        const ebtn = ev.target.closest('.editBookBtn');
+        if (ebtn){
+          const id = ebtn.dataset.id;
+          openEditModalForUser(id);
+        }
+      });
+    }
+
+    // Edit for customer (small inline form)
+    async function openEditModalForUser(id){
+      const ref = doc(db,'bookings',id); const s = await getDoc(ref);
+      if (!s.exists()) return alert('Not found');
+      const r = s.data();
+      // reuse admin modal
+      document.getElementById('editBookingId').value = id;
+      document.getElementById('editDate').value = r.date;
+      populateEditTimes(r.date, r.time);
+      document.getElementById('editNumPeople').value = r.party||r.people||1;
+      document.getElementById('editLocation').value = r.location || 'onsite';
+      document.getElementById('editAddress').value = r.address || '';
+      showEditModal();
+    }
+
+    function populateEditTimes(date, selected){
+      const sel = document.getElementById('editTime'); sel.innerHTML='';
+      const slots = generateSlots();
+      for (const s of slots){ const o = document.createElement('option'); o.value=s; o.textContent=s; if (s===selected) o.selected=true; sel.appendChild(o); }
+    }
+
+    // ---------------------------
+    // Admin: Bookings (view/edit/cancel) + search/filter
+    // ---------------------------
+    async function loadAllBookings(filters = {}) {
+      allBookingsEl.innerHTML = 'Loading...';
+      // base query - fetch all (for simplicity)
+      const snap = await getDocs(query(collection(db,'bookings'), orderBy('date'), orderBy('time')));
+      let docs = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+
+      // apply filters client-side: email, date range
+      if (filters.email) docs = docs.filter(x => x.email === filters.email);
+      if (filters.startDate) docs = docs.filter(x => x.date >= filters.startDate);
+      if (filters.endDate) docs = docs.filter(x => x.date <= filters.endDate);
+
+      if (!docs.length) { allBookingsEl.innerHTML = '<div class="small muted">No bookings found.</div>'; return; }
+
+      allBookingsEl.innerHTML = '';
+      for (const r of docs){
+        const wrap = document.createElement('div'); wrap.className='card'; wrap.style.marginBottom='8px';
+        wrap.innerHTML = `<div style="display:flex;justify-content:space-between">
+          <div><strong>${r.resourceName||'—'}</strong><div class="small muted">${r.date} • ${r.time}</div></div>
+          <div style="text-align:right"><div><b>${(r.total||0).toLocaleString()} XOF</b></div><div class="small">${r.party||r.people} ppl</div></div>
+        </div>
+        <div class="small muted" style="margin-top:8px">${r.email}</div>
+        <div style="margin-top:8px"><button class="btn-ghost admin-edit" data-id="${r.id}">✏️ Edit</button> <button class="btn-ghost admin-cancel" data-id="${r.id}">❌ Cancel</button></div>`;
+        allBookingsEl.appendChild(wrap);
+      }
+
+      // attach handlers
+      allBookingsEl.onclick = async (ev)=>{
+        const ed = ev.target.closest('.admin-edit');
+        if (ed){ openEditBookingModal(ed.dataset.id); return; }
+        const cd = ev.target.closest('.admin-cancel');
+        if (cd){
+          if (!confirm('Cancel booking?')) return;
+          await deleteDoc(doc(db,'bookings',cd.dataset.id));
+          await addDoc(logsRef,{ action:'cancel', bookingId: cd.dataset.id, userId: currentUser.uid, timestamp: serverTimestamp() });
+          alert('Cancelled');
+          loadAllBookings(filters);
+        }
+      };
+    }
+
+    document.getElementById('applyFilters').addEventListener('click', ()=> loadAllBookings({ email: filterEmail.value.trim(), startDate: filterStart.value, endDate: filterEnd.value }));
+    document.getElementById('clearFilters').addEventListener('click', ()=>{
+      filterEmail.value=''; filterStart.value=''; filterEnd.value=''; loadAllBookings();
+    });
+    refreshBookingsBtn.addEventListener('click', ()=> loadAllBookings());
+
+    // Admin: open admin (verify)
+    async function showAdmin(){
+      if (!currentUser) return promptSignIn();
+      const adm = await getDoc(doc(db,'admins', currentUser.uid));
+      if (!adm.exists()) return alert('You are not an admin');
+      adminPanel.classList.remove('hidden');
+      // show first tab
+      adminTabBtns.forEach(b=>b.classList.remove('active'));
+      adminTabBtns[0].classList.add('active');
+      adminSections.forEach((s,i)=> s.classList.toggle('hidden', i!==0));
+      // init data
+      loadAllBookings();
+      loadDiscountsAdmin();
+      loadCustomersList();
+      loadReportsRealtime();
+    }
+
+    // ---------------------------
+    // Admin: Discounts
+    // ---------------------------
+    discountForm.addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      const code = document.getElementById('disc_code').value.trim().toUpperCase();
+      const type = document.getElementById('disc_type').value;
+      const value = Number(document.getElementById('disc_value').value);
+      const start = document.getElementById('disc_start').value;
+      const end = document.getElementById('disc_end').value;
+      if (!code || !value || !start || !end) return alert('Fill all fields');
+      await addDoc(discountsRef, { code, type, value, start, end, active:true, usageCount:0, usedBy:[], createdAt: serverTimestamp() });
+      discountForm.reset();
+      loadDiscountsAdmin();
+    });
+
+    async function loadDiscountsAdmin(){
+      discountList.innerHTML = 'Loading...';
+      const snap = await getDocs(discountsRef);
+      discountList.innerHTML = '';
+      for (const d of snap.docs){
+        const v = d.data(); const id = d.id;
+        const el = document.createElement('div'); el.className='card'; el.style.marginBottom='8px';
+        el.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${v.code}</strong> • ${v.type==='percent'? v.value+'%': v.value+' XOF'} • ${v.start} → ${v.end}</div><div><button class="btn-ghost" data-id="${id}" data-op="toggle">${v.active? 'Deactivate':'Activate'}</button> <button class="btn-ghost" data-id="${id}" data-op="delete">Delete</button></div></div>
+          <div class="small muted">Uses: ${v.usageCount||0} • Users: ${(v.usedBy||[]).join(', ')}</div>`;
+        discountList.appendChild(el);
+      }
+      discountList.onclick = async (ev)=>{
+        const btn = ev.target.closest('button[data-op]');
+        if (!btn) return;
+        const op = btn.dataset.op; const id = btn.dataset.id;
+        if (op === 'toggle'){
+          const docRef = doc(db,'discounts',id); const s = await getDoc(docRef); if (!s.exists()) return;
+          await updateDoc(docRef, { active: !(s.data().active) });
+          loadDiscountsAdmin();
+        } else if (op === 'delete'){
+          if (!confirm('Delete discount?')) return;
+          await deleteDoc(doc(db,'discounts',id)); loadDiscountsAdmin();
+        }
+      };
+    }
+
+    // ---------------------------
+    // Admin: Customers list
+    // ---------------------------
+    async function loadCustomersList(){
+      customersList.innerHTML = 'Loading...';
+      const snap = await getDocs(collection(db,'users'));
+      customersList.innerHTML = '';
+      for (const u of snap.docs){
+        const v = u.data(); const uid = u.id;
+        const el = document.createElement('div'); el.className='card'; el.style.marginBottom='8px';
+        el.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${v.name||v.email||'User'}</strong><div class="small muted">${v.email}</div></div><div><button class="btn-ghost" data-uid="${uid}" data-op="view">View Bookings</button></div></div>`;
+        customersList.appendChild(el);
+      }
+      customersList.onclick = async (ev)=>{
+        const btn = ev.target.closest('button[data-op="view"]'); if (!btn) return;
+        const uid = btn.dataset.uid;
+        const snap = await getDocs(query(collection(db,'bookings'), where('userId','==', uid)));
+        alert(`User bookings:\n` + snap.docs.map(x=>{ const r=x.data(); return `${r.date} ${r.time} — ${r.resourceName||''} — ${r.total||0} XOF`; }).join('\n') );
+      };
+    }
+
+    // ---------------------------
+    // Admin: Edit modal logic (shared)
+    // ---------------------------
+    function openEditBookingModal(id){
+      (async ()=>{
+        const s = await getDoc(doc(db,'bookings',id));
+        if (!s.exists()) return alert('Booking not found');
+        const r = s.data();
+        document.getElementById('editBookingId').value = id;
+        document.getElementById('editDate').value = r.date;
+        populateEditTimeOptions(r.time);
+        document.getElementById('editNumPeople').value = r.party||r.people||1;
+        document.getElementById('editLocation').value = r.location||'onsite';
+        document.getElementById('editAddress').value = r.address||'';
+        showEditModal();
+      })();
+    }
+
+    function populateEditTimeOptions(selected){
+      const sel = document.getElementById('editTime'); sel.innerHTML = '';
+      for (const s of generateSlots()){
+        const o = document.createElement('option'); o.value=s; o.textContent=s; if (s===selected) o.selected=true;
+        sel.appendChild(o);
+      }
+    }
+
+    function showEditModal(){ overlay.classList.remove('hidden'); editModal.classList.remove('hidden'); }
+    function hideEditModal(){ overlay.classList.add('hidden'); editModal.classList.add('hidden'); }
+
+    closeEdit.addEventListener('click', hideEditModal);
+    overlay.addEventListener('click', hideEditModal);
+
+    document.getElementById('editBookingForm').addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      const id = document.getElementById('editBookingId').value;
+      const date = document.getElementById('editDate').value;
+      const time = document.getElementById('editTime').value;
+      const people = Number(document.getElementById('editNumPeople').value);
+      const loc = document.getElementById('editLocation').value;
+      const addr = document.getElementById('editAddress').value;
+      // recalc total
+      const newTotal = calcBaseTotal(people, loc);
+      try {
+        await updateDoc(doc(db,'bookings',id), { date, time, party:people, location:loc, address:addr, total:newTotal, updatedAt: serverTimestamp() });
+        await addDoc(logsRef, { action:'edit', bookingId:id, userId: currentUser? currentUser.uid : 'admin', timestamp: serverTimestamp() });
+        alert('Updated');
+        hideEditModal();
+        loadAllBookings();
+      } catch(e){ console.error(e); alert('Update failed'); }
+    });
+
+    // ---------------------------
+    // Reports & analytics (real-time)
+    // ---------------------------
+    function loadReportsRealtime(){
+      if (bookingsRealtimeListener) return; // already listening
+      bookingsRealtimeListener = onSnapshot(collection(db,'bookings'), snap=>{
+        const bookings = snap.docs.map(d=> d.data());
+        // counters
+        const totalBookings = bookings.length;
+        const totalRevenue = bookings.reduce((s,b)=> s + (Number(b.total)||0), 0);
+        const activeCustomers = new Set(bookings.map(b=> b.email)).size;
+        totalBookingsEl.textContent = totalBookings;
+        totalRevenueEl.textContent = totalRevenue.toLocaleString() + ' XOF';
+        activeCustomersEl.textContent = activeCustomers;
+
+        // bookings by date
+        const dateCounts = {};
+        for (const b of bookings){ dateCounts[b.date] = (dateCounts[b.date]||0) + 1; }
+        const dates = Object.keys(dateCounts).sort();
+        const dateValues = dates.map(d=> dateCounts[d]);
+
+        if (bookingsDateChart) bookingsDateChart.destroy();
+        bookingsDateChart = new Chart(chartBookingsByDate, { type:'line', data:{ labels: dates, datasets:[{ label:'Bookings/day', data: dateValues, borderColor: 'purple', backgroundColor: 'rgba(111,0,255,0.08)', fill:true }] }, options:{responsive:true} });
+
+        // bookings by time
+        const timeCounts = {};
+        for (const b of bookings) timeCounts[b.time] = (timeCounts[b.time]||0) + 1;
+        const times = Object.keys(timeCounts).sort();
+        const timeValues = times.map(t=> timeCounts[t]);
+
+        if (bookingsTimeChart) bookingsTimeChart.destroy();
+        bookingsTimeChart = new Chart(chartBookingsByTime, { type:'bar', data:{ labels: times, datasets:[{ label:'Bookings by hour', data: timeValues, backgroundColor: 'green' }] }, options:{responsive:true} });
+
+        // location split
+        let onsite=0,outside=0;
+        for (const b of bookings){ if (b.location==='outside') outside++; else onsite++; }
+        if (locationChart) locationChart.destroy();
+        locationChart = new Chart(chartLocationSplit, { type:'pie', data:{ labels:['On-site','Outside'], datasets:[{ data:[onsite,outside], backgroundColor:['purple','green'] }] } });
+
+        // revenue trend
+        const revenueByDate = {};
+        for (const b of bookings) revenueByDate[b.date] = (revenueByDate[b.date]||0) + (Number(b.total)||0);
+        const revDates = Object.keys(revenueByDate).sort();
+        const revValues = revDates.map(d=> revenueByDate[d]);
+        if (revenueChart) revenueChart.destroy();
+        revenueChart = new Chart(chartRevenueTrend, { type:'line', data:{ labels: revDates, datasets:[{ label:'Revenue (XOF)', data: revValues, borderColor:'green', backgroundColor:'rgba(0,204,102,0.08)', fill:true }] }, options:{responsive:true} });
+
+        // report counts (cancels/edits)
+        getDocs(collection(db,'logs')).then(ls=>{
+          let cancels=0, edits=0;
+          ls.forEach(l=>{ const v=l.data(); if (v.action==='cancel') cancels++; if (v.action==='edit') edits++; });
+          document.getElementById('reportCounts').innerHTML = `Total cancellations: ${cancels} • Total edits: ${edits}`;
+        });
+
+      }, err=> console.error(err));
+    }
+
+    // ---------------------------
+    // Exports (Excel multi-sheet)
+    // ---------------------------
+    async function exportAllExcel(){
+      // bookings
+      const bSnap = await getDocs(collection(db,'bookings'));
+      const bookings = bSnap.docs.map(d=> {
+        const r = d.data();
+        return { id: d.id, Date: r.date, Time: r.time, Resource: r.resourceName||'', People: r.party||r.people||0, Location: r.location, Address: r.address||'', Total: r.total||0, Discount: r.discountCode||'' , Email: r.email||'' };
+      });
+
+      // discounts
+      const dSnap = await getDocs(discountsRef);
+      const discounts = dSnap.docs.map(d=> { const v=d.data(); return { id:d.id, Code:v.code, Type:v.type, Value:v.value, Start:v.start, End:v.end, Active:v.active, UsageCount:v.usageCount||0, UsedBy:(v.usedBy||[]).join('; ') }; });
+
+      // customers aggregated
+      const customers = {};
+      for (const r of bookings){
+        if (!customers[r.Email]) customers[r.Email] = { Email:r.Email, TotalBookings:0, TotalSpent:0 };
+        customers[r.Email].TotalBookings += 1;
+        customers[r.Email].TotalSpent += Number(r.Total)||0;
+      }
+      const customersArr = Object.values(customers);
+
+      const sheets = { Bookings: bookings, Discounts: discounts, Customers: customersArr };
+      const wb = XLSX.utils.book_new();
+      Object.keys(sheets).forEach(name => {
+        const ws = XLSX.utils.json_to_sheet(sheets[name]);
+        XLSX.utils.book_append_sheet(wb, ws, name);
+      });
+      XLSX.writeFile(wb, 'JeuxDia_Reports.xlsx');
+    }
+
+    exportExcelBtn && exportExcelBtn.addEventListener('click', exportAllExcel);
+
+    // ---------------------------
+    // Utils & boot
+    // ---------------------------
+    function showEditModalForUser(id){ openEditModalForUser(id); } // alias
+
+    function initAdminTabButtons(){
+      adminTabBtns.forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          adminTabBtns.forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          adminSections.forEach(s=> s.classList.add('hidden'));
+          document.getElementById(btn.dataset.tab).classList.remove('hidden');
+          // load section-specific data when visible
+          if (btn.dataset.tab === 'admin_bookings') loadAllBookings();
+          if (btn.dataset.tab === 'admin_discounts') loadDiscountsAdmin();
+          if (btn.dataset.tab === 'admin_customers') loadCustomersList();
+          if (btn.dataset.tab === 'admin_reports') loadReportsRealtime();
+        });
+      });
+    }
+
+    // initial load
+    (async function boot(){
+      try {
+        await loadResourcesAndPricing();
+        initAdminTabButtons();
+        // wire some simple UI
+        document.getElementById('toSignIn')?.addEventListener('click', promptSignIn);
+      } catch (err) {
+        console.error('Init error', err);
+      }
+    })();
+
+    // helper: show admin panel programmatically
+    window.refreshAdmin = async ()=> {
+      if (!currentUser) return;
+      const adm = await getDoc(doc(db,'admins',currentUser.uid));
+      if (adm.exists()) { adminPanel.classList.remove('hidden'); loadAllBookings(); loadDiscountsAdmin(); loadCustomersList(); loadReportsRealtime(); }
+    };
+
+    // expose some functions for testing (dev)
+    window.jeux = {
+      db, auth,
+      createBooking, loadMyBookings, loadAllBookings, loadDiscountsAdmin, loadCustomersList, loadReportsRealtime, exportAllExcel
+    };
+
+    // End module
   </script>
 </body>
 </html>
